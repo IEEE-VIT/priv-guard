@@ -41,12 +41,14 @@ class _GalleryScreenState extends State<GalleryScreen>
     _fabAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _fabAnimationController, curve: Curves.easeInOut),
     );
+    _searchController.addListener(_refreshDisplayItems);
     _initializeApp();
   }
 
   @override
   void dispose() {
     _fabAnimationController.dispose();
+    _searchController.removeListener(_refreshDisplayItems);
     _searchController.dispose();
     super.dispose();
   }
@@ -177,6 +179,10 @@ class _GalleryScreenState extends State<GalleryScreen>
     } catch (e) {
       print('Error adding default items: $e');
     }
+  }
+  void _clearSearch() {
+    _searchController.clear();
+    _refreshDisplayItems();
   }
 
   Future<void> _loadEncryptedTextPosts() async {
@@ -1229,215 +1235,199 @@ class _GalleryScreenState extends State<GalleryScreen>
         ),
       );
     }
-
-    return Scaffold(
-      backgroundColor: Color(0xFFF3F4F6),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        shadowColor: Colors.black26,
-        // REMOVED: leading close button
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.shield, color: Color(0xFF0C7FF2), size: 24),
-            SizedBox(width: 8),
-            Text(
-              'PrivGuard',
-              style: TextStyle(
-                color: Color(0xFF334155),
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Gallery',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF334155),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Expanded(
-                    child: _displayItems.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.photo_library_outlined,
-                                  size: 80,
-                                  color: Color(0xFF94A3B8),
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'No media yet',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF64748B),
-                                  ),
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Add or capture media to get started',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Color(0xFF94A3B8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Column(
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.symmetric(vertical: 8),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _searchController,
-                                        decoration: InputDecoration(
-                                          hintText:
-                                              'Search by caption or title',
-                                          prefixIcon: Icon(Icons.search),
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          isDense: true,
-                                        ),
-                                        onChanged: (_) =>
-                                            _refreshDisplayItems(),
-                                      ),
-                                    ),
-                                    SizedBox(width: 8),
-                                    IconButton(
-                                      onPressed: () {
-                                        _sortAscending = !_sortAscending;
-                                        _refreshDisplayItems();
-                                      },
-                                      icon: Icon(
-                                        _sortAscending
-                                            ? Icons.sort_by_alpha
-                                            : Icons.sort,
-                                        color: Color(0xFF0C7FF2),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Expanded(
-                                child: GridView.builder(
-                                  gridDelegate:
-                                      SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 2,
-                                    crossAxisSpacing: 8,
-                                    mainAxisSpacing: 8,
-                                    childAspectRatio: 1.0,
-                                  ),
-                                  itemCount: _displayItems.length,
-                                  itemBuilder: (context, index) {
-                                    final item = _displayItems[index];
-                                    return GestureDetector(
-                                      onTap: () => _showFullContent(item),
-                                      onLongPress: () => _onLongPress(item),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color:
-                                                  Colors.black.withOpacity(0.1),
-                                              blurRadius: 4,
-                                              offset: Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                          child: Stack(
-                                            children: [
-                                              if (item['type'] == 'image')
-                                                _buildImageWidget(item)
-                                              else if (item['type'] == 'text')
-                                                Container(
-                                                  color: Colors.white,
-                                                  child:
-                                                      _buildTextContentWidget(
-                                                          item),
-                                                )
-                                              else
-                                                Container(
-                                                  color: Colors.white,
-                                                  child: Center(
-                                                    child: Icon(
-                                                      item['thumbnail'] ??
-                                                          Icons.help,
-                                                      size: 32,
-                                                      color: Color(0xFF0C7FF2),
-                                                    ),
-                                                  ),
-                                                ),
-                                              if (item['type'] == 'video')
-                                                Positioned(
-                                                  bottom: 4,
-                                                  right: 4,
-                                                  child: Container(
-                                                    padding:
-                                                        EdgeInsets.symmetric(
-                                                            horizontal: 4,
-                                                            vertical: 2),
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.black54,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              4),
-                                                    ),
-                                                    child: Text(
-                                                      '1:23',
-                                                      style: TextStyle(
-                                                        color: Colors.white,
-                                                        fontSize: 10,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+        return Scaffold(
+        backgroundColor: Color(0xFFF3F4F6),
+    appBar: AppBar(
+    backgroundColor: Colors.white,
+    elevation: 0,
+    shadowColor: Colors.black26,
+    automaticallyImplyLeading: false,
+    title: Row(
+    mainAxisAlignment: MainAxisAlignment.center,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+    Icon(Icons.shield, color: Color(0xFF0C7FF2), size: 24),
+    SizedBox(width: 8),
+    Text(
+    'PrivGuard',
+    style: TextStyle(
+    color: Color(0xFF334155),
+    fontSize: 20,
+    fontWeight: FontWeight.bold,
+    ),
+    ),
+    ],
+    ),
+    centerTitle: true,
+    ),
+    body: Column(
+    children: [
+    Padding(
+    padding: EdgeInsets.all(16),
+    child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+    Text(
+    'Gallery',
+    style: TextStyle(
+    fontSize: 24,
+    fontWeight: FontWeight.w600,
+    color: Color(0xFF334155),
+    ),
+    ),
+    SizedBox(height: 16),
+    Row(
+    children: [
+    Expanded(
+    child: TextField(
+    controller: _searchController,
+    decoration: InputDecoration(
+    hintText: 'Search by caption or title',
+    prefixIcon: Icon(Icons.search),
+    suffixIcon: _searchController.text.isNotEmpty
+    ? IconButton(
+    icon: Icon(Icons.clear),
+    onPressed: _clearSearch,
+    )
+        : null,
+    border: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(8),
+    ),
+    isDense: true,
+    ),
+    onChanged: (_) => _refreshDisplayItems(),
+    ),
+    ),
+    SizedBox(width: 8),
+    IconButton(
+    onPressed: () {
+    _sortAscending = !_sortAscending;
+    _refreshDisplayItems();
+    },
+    icon: Icon(
+    _sortAscending ? Icons.sort_by_alpha : Icons.sort,
+    color: Color(0xFF0C7FF2),
+    ),
+    ),
+    ],
+    ),
+    SizedBox(height: 8),
+    ],
+    ),
+    ),
+    Expanded(
+    child: Padding(
+    padding: EdgeInsets.symmetric(horizontal: 16),
+    child: _displayItems.isEmpty
+    ? Center(
+    child: Column(
+    mainAxisAlignment: MainAxisAlignment.center,
+    children: [
+    Icon(
+    Icons.photo_library_outlined,
+    size: 80,
+    color: Color(0xFF94A3B8),
+    ),
+    SizedBox(height: 16),
+    Text(
+    _searchController.text.isEmpty
+    ? 'No media yet'
+        : 'No such posts found',
+    style: TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w500,
+    color: Color(0xFF64748B),
+    ),
+    ),
+    SizedBox(height: 8),
+    Text(
+    _searchController.text.isEmpty
+    ? 'Add or capture media to get started'
+        : 'Try a different search term',
+    style: TextStyle(
+    fontSize: 14,
+    color: Color(0xFF94A3B8),
+    ),
+    ),
+    ],
+    ),
+    )
+        : GridView.builder(
+    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+    crossAxisCount: 2,
+    crossAxisSpacing: 8,
+    mainAxisSpacing: 8,
+    childAspectRatio: 1.0,
+    ),
+    itemCount: _displayItems.length,
+    itemBuilder: (context, index) {
+    final item = _displayItems[index];
+    return GestureDetector(
+    onTap: () => _showFullContent(item),
+    onLongPress: () => _onLongPress(item),
+    child: Container(
+    decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(12),
+    boxShadow: [
+    BoxShadow(
+    color: Colors.black.withOpacity(0.1),
+    blurRadius: 4,
+    offset: Offset(0, 2),
+    ),
+    ],
+    ),
+    child: ClipRRect(
+    borderRadius: BorderRadius.circular(12),
+    child: Stack(
+    children: [
+    if (item['type'] == 'image')
+    _buildImageWidget(item)
+    else if (item['type'] == 'text')
+    Container(
+    color: Colors.white,
+    child: _buildTextContentWidget(item),
+    )
+    else
+    Container(
+    color: Colors.white,
+    child: Center(
+    child: Icon(
+    item['thumbnail'] ?? Icons.help,
+    size: 32,
+    color: Color(0xFF0C7FF2),
+    ),
+    ),
+    ),
+    if (item['type'] == 'video')
+    Positioned(
+    bottom: 4,
+    right: 4,
+    child: Container(
+    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+    decoration: BoxDecoration(
+    color: Colors.black54,
+    borderRadius: BorderRadius.circular(4),
+    ),
+    child: Text(
+    '1:23',
+    style: TextStyle(
+    color: Colors.white,
+    fontSize: 10,
+    ),
+    ),
+    ),
+    ),
+    ],
+    ),
+    ),
+    ),
+    );
+    },
+    ),
+    ),
+    ),
+    ],
+    ),
       floatingActionButton: Stack(
         children: [
           if (_showAddOptions) ...[
