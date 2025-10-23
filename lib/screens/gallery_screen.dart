@@ -14,7 +14,8 @@ class GalleryScreen extends StatefulWidget {
   _GalleryScreenState createState() => _GalleryScreenState();
 }
 
-class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateMixin {
+class _GalleryScreenState extends State<GalleryScreen>
+    with TickerProviderStateMixin {
   final ImagePicker _picker = ImagePicker();
   final FlutterSecureStorage _secureStorage = FlutterSecureStorage();
   final String _keyStorageName = 'gallery_aes_key';
@@ -54,8 +55,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
     try {
       await _initEncryptionKey();
       await _loadAllData();
-  // initialize display items
-  _refreshDisplayItems();
+      // initialize display items
+      _refreshDisplayItems();
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -133,22 +134,39 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
 
       if (!await flagFile.exists()) {
         final defaultItems = [
-          {'id': 1, 'type': 'image', 'thumbnail': Icons.image, 'title': 'Image 1'},
+          {
+            'id': 1,
+            'type': 'image',
+            'thumbnail': Icons.image,
+            'title': 'Image 1'
+          },
           {
             'id': 2,
             'type': 'text',
             'thumbnail': Icons.text_fields,
             'title': 'Welcome Post',
-            'text': 'Welcome to PrivGuard! Contact us at support@privguard.com or call (555) 123-4567.'
+            'text':
+                'Welcome to PrivGuard! Contact us at support@privguard.com or call (555) 123-4567.'
           },
-          {'id': 3, 'type': 'image', 'thumbnail': Icons.image, 'title': 'Image 2'},
-          {'id': 4, 'type': 'video', 'thumbnail': Icons.videocam, 'title': 'Video 1'},
+          {
+            'id': 3,
+            'type': 'image',
+            'thumbnail': Icons.image,
+            'title': 'Image 2'
+          },
+          {
+            'id': 4,
+            'type': 'video',
+            'thumbnail': Icons.videocam,
+            'title': 'Video 1'
+          },
           {
             'id': 5,
             'type': 'text',
             'thumbnail': Icons.text_fields,
             'title': 'Test Data',
-            'text': 'My email is john.doe@example.com and my phone is +1-555-987-6543. I live at 123 Main Street.'
+            'text':
+                'My email is john.doe@example.com and my phone is +1-555-987-6543. I live at 123 Main Street.'
           },
         ];
 
@@ -170,7 +188,7 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
         final encryptedBytes = await textFile.readAsBytes();
         final decryptedJson = await _decryptData(encryptedBytes);
         final List<dynamic> textPosts = json.decode(decryptedJson);
-        
+
         for (var post in textPosts) {
           _mediaItems.add({
             'id': post['id'],
@@ -190,14 +208,15 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
     try {
       final dir = await getApplicationDocumentsDirectory();
       final files = Directory(dir.path).listSync();
-      
+
       for (var file in files) {
         if (file.path.endsWith('.enc') && !file.path.contains('text_posts')) {
           final baseName = file.path.split('/').last.replaceFirst('.enc', '');
           // skip meta files (they end with .meta.enc)
           if (baseName.endsWith('.meta')) continue;
 
-          String storageName = baseName; // storage identifier (new files use timestamp_+name)
+          String storageName =
+              baseName; // storage identifier (new files use timestamp_+name)
           String? caption;
           String? originalName;
           try {
@@ -234,10 +253,10 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
   Future<void> _saveEncryptedTextPosts() async {
     try {
       if (_aesKey == null) return;
-      
+
       final dir = await getApplicationDocumentsDirectory();
       final textFile = File('${dir.path}/$_textPostsFileName');
-      
+
       final textPosts = _mediaItems
           .where((item) => item['type'] == 'text')
           .map((item) => {
@@ -246,7 +265,7 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                 'text': item['text'],
               })
           .toList();
-      
+
       if (textPosts.isNotEmpty) {
         final jsonString = json.encode(textPosts);
         final encryptedBytes = await _encryptData(jsonString);
@@ -260,7 +279,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
   Future<Uint8List> _encryptData(String data) async {
     if (_aesKey == null) throw Exception('Encryption key not initialized');
     final iv = encrypt.IV.fromSecureRandom(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(_aesKey!, mode: encrypt.AESMode.cbc));
+    final encrypter =
+        encrypt.Encrypter(encrypt.AES(_aesKey!, mode: encrypt.AESMode.cbc));
     final encrypted = encrypter.encrypt(data, iv: iv);
     return Uint8List.fromList([...iv.bytes, ...encrypted.bytes]);
   }
@@ -269,14 +289,17 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
     if (_aesKey == null) throw Exception('Encryption key not initialized');
     final iv = encrypt.IV(encryptedData.sublist(0, 16));
     final encryptedContent = encryptedData.sublist(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(_aesKey!, mode: encrypt.AESMode.cbc));
+    final encrypter =
+        encrypt.Encrypter(encrypt.AES(_aesKey!, mode: encrypt.AESMode.cbc));
     return encrypter.decrypt(encrypt.Encrypted(encryptedContent), iv: iv);
   }
 
-  Future<String> _saveEncryptedImage(Uint8List imageBytes, String fileName) async {
+  Future<String> _saveEncryptedImage(
+      Uint8List imageBytes, String fileName) async {
     if (_aesKey == null) throw Exception('Encryption key not initialized');
     final iv = encrypt.IV.fromSecureRandom(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(_aesKey!, mode: encrypt.AESMode.cbc));
+    final encrypter =
+        encrypt.Encrypter(encrypt.AES(_aesKey!, mode: encrypt.AESMode.cbc));
     final encrypted = encrypter.encryptBytes(imageBytes, iv: iv);
     final dir = await getApplicationDocumentsDirectory();
     // Use a unique storage name to avoid filename collisions
@@ -287,13 +310,15 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
     return filePath;
   }
 
-  Future<void> _saveImageMetadata(String storageName, Map<String, dynamic> metadata) async {
+  Future<void> _saveImageMetadata(
+      String storageName, Map<String, dynamic> metadata) async {
     if (_aesKey == null) throw Exception('Encryption key not initialized');
     final dir = await getApplicationDocumentsDirectory();
     final metaFile = File('${dir.path}/$storageName.meta.enc');
     final jsonString = json.encode(metadata);
     final iv = encrypt.IV.fromSecureRandom(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(_aesKey!, mode: encrypt.AESMode.cbc));
+    final encrypter =
+        encrypt.Encrypter(encrypt.AES(_aesKey!, mode: encrypt.AESMode.cbc));
     final encrypted = encrypter.encrypt(jsonString, iv: iv);
     await metaFile.writeAsBytes([...iv.bytes, ...encrypted.bytes]);
   }
@@ -314,14 +339,16 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
     final bytes = await file.readAsBytes();
     final iv = encrypt.IV(bytes.sublist(0, 16));
     final encryptedData = bytes.sublist(16);
-    final encrypter = encrypt.Encrypter(encrypt.AES(_aesKey!, mode: encrypt.AESMode.cbc));
-    final decrypted = encrypter.decryptBytes(encrypt.Encrypted(encryptedData), iv: iv);
+    final encrypter =
+        encrypt.Encrypter(encrypt.AES(_aesKey!, mode: encrypt.AESMode.cbc));
+    final decrypted =
+        encrypter.decryptBytes(encrypt.Encrypted(encryptedData), iv: iv);
     return Uint8List.fromList(decrypted);
   }
 
   void _addTextPost(String text) async {
     if (!mounted || text.isEmpty) return;
-    
+
     final newPost = {
       'id': DateTime.now().millisecondsSinceEpoch,
       'type': 'text',
@@ -333,7 +360,7 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
     setState(() {
       _mediaItems.add(newPost);
     });
-    
+
     await _saveEncryptedTextPosts();
   }
 
@@ -354,17 +381,20 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
                 setState(() {
-                  _mediaItems.removeWhere((element) => element['id'] == item['id']);
+                  _mediaItems
+                      .removeWhere((element) => element['id'] == item['id']);
                 });
                 _refreshDisplayItems();
-                
+
                 if (item['encryptedPath'] != null) {
-                  await File(item['encryptedPath']).delete().catchError((_) => File(''));
+                  await File(item['encryptedPath'])
+                      .delete()
+                      .catchError((_) => File(''));
                   if (item['storageName'] != null) {
                     await _deleteImageMetadata(item['storageName']);
                   }
                 }
-                
+
                 if (item['type'] == 'text') {
                   await _saveEncryptedTextPosts();
                 }
@@ -388,10 +418,13 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
         // Prompt for optional caption before saving
         final caption = await _promptForCaption(initial: '');
 
-        final String encryptedPath = await _saveEncryptedImage(imageBytes, pickedFile.name);
-        final storageName = encryptedPath.split('/').last.replaceFirst('.enc', '');
+        final String encryptedPath =
+            await _saveEncryptedImage(imageBytes, pickedFile.name);
+        final storageName =
+            encryptedPath.split('/').last.replaceFirst('.enc', '');
         if (caption != null && caption.trim().isNotEmpty) {
-          await _saveImageMetadata(storageName, {'caption': caption.trim(), 'fileName': pickedFile.name});
+          await _saveImageMetadata(storageName,
+              {'caption': caption.trim(), 'fileName': pickedFile.name});
         }
 
         setState(() {
@@ -406,7 +439,7 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
             'caption': caption?.trim(),
           });
         });
-  _refreshDisplayItems();
+        _refreshDisplayItems();
       }
     } catch (e) {
       if (mounted) {
@@ -430,10 +463,13 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
         final Uint8List imageBytes = await capturedFile.readAsBytes();
         final caption = await _promptForCaption(initial: '');
 
-        final String encryptedPath = await _saveEncryptedImage(imageBytes, capturedFile.name);
-        final storageName = encryptedPath.split('/').last.replaceFirst('.enc', '');
+        final String encryptedPath =
+            await _saveEncryptedImage(imageBytes, capturedFile.name);
+        final storageName =
+            encryptedPath.split('/').last.replaceFirst('.enc', '');
         if (caption != null && caption.trim().isNotEmpty) {
-          await _saveImageMetadata(storageName, {'caption': caption.trim(), 'fileName': capturedFile.name});
+          await _saveImageMetadata(storageName,
+              {'caption': caption.trim(), 'fileName': capturedFile.name});
         }
 
         setState(() {
@@ -448,7 +484,7 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
             'caption': caption?.trim(),
           });
         });
-  _refreshDisplayItems();
+        _refreshDisplayItems();
       }
     } catch (e) {
       if (mounted) {
@@ -486,11 +522,13 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(16)),
                   ),
                   child: Row(
                     children: [
-                      Icon(item['thumbnail'] ?? Icons.help, color: Color(0xFF0C7FF2)),
+                      Icon(item['thumbnail'] ?? Icons.help,
+                          color: Color(0xFF0C7FF2)),
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -524,7 +562,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+                    borderRadius:
+                        BorderRadius.vertical(bottom: Radius.circular(16)),
                   ),
                   child: Row(
                     children: [
@@ -535,7 +574,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => ScanAnalysisScreen(mediaItem: item),
+                                builder: (context) =>
+                                    ScanAnalysisScreen(mediaItem: item),
                               ),
                             );
                           },
@@ -652,7 +692,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                   ),
                 ],
               ),
-              if (item['caption'] != null && (item['caption'] as String).isNotEmpty)
+              if (item['caption'] != null &&
+                  (item['caption'] as String).isNotEmpty)
                 Padding(
                   padding: EdgeInsets.only(top: 8),
                   child: Row(
@@ -755,6 +796,57 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
     }
   }
 
+  Future<String?> _promptForTextEdit({required String initial}) async {
+    String? result;
+    final TextEditingController controller =
+        TextEditingController(text: initial);
+    bool disposed = false;
+
+    await showDialog<String?>(
+      context: context,
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text('Edit Text Post'),
+          content: TextField(
+            controller: controller,
+            maxLines: 3,
+            maxLength: 1000,
+            decoration: InputDecoration(
+              hintText: 'Edit your text post',
+              border: OutlineInputBorder(),
+              counterText: '',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                result = controller.text;
+                Navigator.of(dialogContext).pop();
+              },
+              child: Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!disposed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        controller.dispose();
+        disposed = true;
+      });
+    }
+
+    return result;
+  }
+
   void _onLongPress(Map<String, dynamic> item) {
     showModalBottomSheet(
       context: context,
@@ -783,7 +875,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                   children: [
                     Row(
                       children: [
-                        Icon(item['thumbnail'] ?? Icons.help, color: Color(0xFF0C7FF2)),
+                        Icon(item['thumbnail'] ?? Icons.help,
+                            color: Color(0xFF0C7FF2)),
                         SizedBox(width: 12),
                         Expanded(
                           child: Text(
@@ -807,29 +900,57 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ScanAnalysisScreen(mediaItem: item),
+                            builder: (context) =>
+                                ScanAnalysisScreen(mediaItem: item),
                           ),
                         );
                       },
                     ),
+                    if (item['type'] == 'text')
+                      ListTile(
+                        leading: Icon(Icons.edit, color: Color(0xFF0C7FF2)),
+                        title: Text('Edit text'),
+                        subtitle: Text('Modify the text content'),
+                        onTap: () async {
+                          Navigator.pop(context);
+                          final newText = await _promptForTextEdit(
+                              initial: item['text'] ?? '');
+                          if (newText != null) {
+                            setState(() {
+                              item['text'] = newText.trim();
+                              item['title'] = newText.trim().length > 20
+                                  ? newText.trim().substring(0, 20) + '...'
+                                  : newText.trim();
+                            });
+                            await _saveEncryptedTextPosts();
+                            _refreshDisplayItems();
+                          }
+                        },
+                      ),
                     // Only show caption option for image posts
                     if (item['type'] == 'image')
                       ListTile(
                         leading: Icon(Icons.edit, color: Color(0xFF0C7FF2)),
                         title: Text('Edit caption'),
-                        subtitle: Text('Add or modify the image caption/description'),
+                        subtitle:
+                            Text('Add or modify the image caption/description'),
                         onTap: () async {
                           Navigator.pop(context);
-                          final newCaption = await _promptForCaption(initial: item['caption'] ?? '');
+                          final newCaption = await _promptForCaption(
+                              initial: item['caption'] ?? '');
                           if (newCaption != null) {
                             setState(() {
                               item['caption'] = newCaption.trim();
                             });
-                            final storageName = item['storageName'] ?? item['fileName'];
+                            final storageName =
+                                item['storageName'] ?? item['fileName'];
                             if ((newCaption.trim()).isEmpty) {
                               await _deleteImageMetadata(storageName);
                             } else {
-                              await _saveImageMetadata(storageName, {'caption': newCaption.trim(), 'fileName': item['fileName'] ?? storageName});
+                              await _saveImageMetadata(storageName, {
+                                'caption': newCaption.trim(),
+                                'fileName': item['fileName'] ?? storageName
+                              });
                             }
                             _refreshDisplayItems();
                           }
@@ -943,12 +1064,14 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
     });
   }
 
-  Widget _buildImageWidget(Map<String, dynamic> item, {bool isFullView = false}) {
+  Widget _buildImageWidget(Map<String, dynamic> item,
+      {bool isFullView = false}) {
     if (item['encryptedPath'] != null) {
       return FutureBuilder<Uint8List>(
         future: _loadAndDecryptImage(item['encryptedPath']),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.done &&
+              snapshot.hasData) {
             return ClipRRect(
               borderRadius: BorderRadius.circular(isFullView ? 12 : 12),
               child: Image.memory(
@@ -985,7 +1108,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
 
   Future<String?> _promptForCaption({required String initial}) async {
     String? result;
-    final TextEditingController controller = TextEditingController(text: initial);
+    final TextEditingController controller =
+        TextEditingController(text: initial);
     bool disposed = false;
 
     await showDialog<String?>(
@@ -1028,7 +1152,7 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
         controller.dispose();
         disposed = true;
       });
-  }
+    }
 
     return result;
   }
@@ -1190,14 +1314,17 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                                       child: TextField(
                                         controller: _searchController,
                                         decoration: InputDecoration(
-                                          hintText: 'Search by caption or title',
+                                          hintText:
+                                              'Search by caption or title',
                                           prefixIcon: Icon(Icons.search),
                                           border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(8),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
                                           ),
                                           isDense: true,
                                         ),
-                                        onChanged: (_) => _refreshDisplayItems(),
+                                        onChanged: (_) =>
+                                            _refreshDisplayItems(),
                                       ),
                                     ),
                                     SizedBox(width: 8),
@@ -1207,7 +1334,9 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                                         _refreshDisplayItems();
                                       },
                                       icon: Icon(
-                                        _sortAscending ? Icons.sort_by_alpha : Icons.sort,
+                                        _sortAscending
+                                            ? Icons.sort_by_alpha
+                                            : Icons.sort,
                                         color: Color(0xFF0C7FF2),
                                       ),
                                     ),
@@ -1216,7 +1345,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                               ),
                               Expanded(
                                 child: GridView.builder(
-                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  gridDelegate:
+                                      SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 2,
                                     crossAxisSpacing: 8,
                                     mainAxisSpacing: 8,
@@ -1230,17 +1360,20 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                                       onLongPress: () => _onLongPress(item),
                                       child: Container(
                                         decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Colors.black.withOpacity(0.1),
+                                              color:
+                                                  Colors.black.withOpacity(0.1),
                                               blurRadius: 4,
                                               offset: Offset(0, 2),
                                             ),
                                           ],
                                         ),
                                         child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                           child: Stack(
                                             children: [
                                               if (item['type'] == 'image')
@@ -1248,14 +1381,17 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                                               else if (item['type'] == 'text')
                                                 Container(
                                                   color: Colors.white,
-                                                  child: _buildTextContentWidget(item),
+                                                  child:
+                                                      _buildTextContentWidget(
+                                                          item),
                                                 )
                                               else
                                                 Container(
                                                   color: Colors.white,
                                                   child: Center(
                                                     child: Icon(
-                                                      item['thumbnail'] ?? Icons.help,
+                                                      item['thumbnail'] ??
+                                                          Icons.help,
                                                       size: 32,
                                                       color: Color(0xFF0C7FF2),
                                                     ),
@@ -1266,10 +1402,15 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                                                   bottom: 4,
                                                   right: 4,
                                                   child: Container(
-                                                    padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                                    padding:
+                                                        EdgeInsets.symmetric(
+                                                            horizontal: 4,
+                                                            vertical: 2),
                                                     decoration: BoxDecoration(
                                                       color: Colors.black54,
-                                                      borderRadius: BorderRadius.circular(4),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              4),
                                                     ),
                                                     child: Text(
                                                       '1:23',
@@ -1316,7 +1457,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
@@ -1344,7 +1486,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                                 _toggleAddOptions();
                                 _pickImageFromGallery();
                               },
-                              child: Icon(Icons.upload_file, color: Color(0xFF64748B)),
+                              child: Icon(Icons.upload_file,
+                                  color: Color(0xFF64748B)),
                             ),
                           ],
                         ),
@@ -1370,7 +1513,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
@@ -1398,7 +1542,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                                 _toggleAddOptions();
                                 _captureImageFromCamera();
                               },
-                              child: Icon(Icons.photo_camera, color: Color(0xFF64748B)),
+                              child: Icon(Icons.photo_camera,
+                                  color: Color(0xFF64748B)),
                             ),
                           ],
                         ),
@@ -1424,7 +1569,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
@@ -1452,7 +1598,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                                 _toggleAddOptions();
                                 _showCreateTextPostDialog();
                               },
-                              child: Icon(Icons.edit_note, color: Color(0xFF64748B)),
+                              child: Icon(Icons.edit_note,
+                                  color: Color(0xFF64748B)),
                             ),
                           ],
                         ),
@@ -1473,7 +1620,8 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
                 animation: _fabAnimation,
                 builder: (context, child) {
                   return Transform.rotate(
-                    angle: _fabAnimation.value * 0.785398, // 45 degrees in radians
+                    angle:
+                        _fabAnimation.value * 0.785398, // 45 degrees in radians
                     child: Icon(
                       Icons.add,
                       color: Colors.white,
@@ -1489,3 +1637,5 @@ class _GalleryScreenState extends State<GalleryScreen> with TickerProviderStateM
     );
   }
 }
+
+
