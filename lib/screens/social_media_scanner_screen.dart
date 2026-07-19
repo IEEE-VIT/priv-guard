@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 class SocialMediaScannerScreen extends StatefulWidget {
   @override
-  _SocialMediaScannerScreenState createState() => _SocialMediaScannerScreenState();
+  _SocialMediaScannerScreenState createState() =>
+      _SocialMediaScannerScreenState();
 }
 
 class _SocialMediaScannerScreenState extends State<SocialMediaScannerScreen> {
@@ -30,7 +31,8 @@ class _SocialMediaScannerScreenState extends State<SocialMediaScannerScreen> {
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Privacy report will be sent to ${_emailController.text}'),
+        content:
+            Text('Privacy report will be sent to ${_emailController.text}'),
         backgroundColor: Colors.green[600],
       ),
     );
@@ -135,7 +137,8 @@ class _SocialMediaScannerScreenState extends State<SocialMediaScannerScreen> {
                             decoration: InputDecoration(
                               hintText: '@username',
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 16),
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 16),
                             ),
                           ),
                         ),
@@ -162,7 +165,8 @@ class _SocialMediaScannerScreenState extends State<SocialMediaScannerScreen> {
                             decoration: InputDecoration(
                               hintText: 'you@example.com',
                               border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 16),
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 16),
                             ),
                           ),
                         ),

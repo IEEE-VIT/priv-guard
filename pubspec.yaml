@@ -40,6 +40,9 @@ dependencies:
   path_provider: ^2.1.2
   tflite_flutter: ^0.11.0
   tokenizer: ^1.0.0
+  # On-device OCR for image posts. Pinned to 0.15.0: newer releases (>=0.15.1)
+  # require Dart SDK >=3.8.0, while this project targets Dart 3.6.
+  google_mlkit_text_recognition: 0.15.0
 
 dev_dependencies:
   flutter_test:
