@@ -56,7 +56,8 @@ com
     }
 
     // Call the test helper to process mocked logits and tokens
-    final entities = test_processPredictionsWithMockedLogits(mockedLogits, tokens);
+    final entities =
+        test_processPredictionsWithMockedLogits(mockedLogits, tokens);
 
     expect(entities.length, 1);
     expect(entities[0].label, 'EMAIL');

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:math' as math;
+import '../services/image_ocr_service.dart';
 
 Interpreter? _interpreter;
 DistilBertTokenizer? _tokenizer;
@@ -77,59 +78,40 @@ class _ScanAnalysisScreenState extends State<ScanAnalysisScreen> {
           // Run actual PII detection
           final piiEntities = await detectPII(text);
 
-          // Calculate risk score based on detected entities
-          final riskScore = _calculateRiskScore(piiEntities);
-          final riskLevel = _getRiskLevel(riskScore);
-
-          // Generate detected risks and suggestions
-          final detectedRisks = _generateDetectedRisks(piiEntities);
-          final suggestions = _generateSuggestions(piiEntities);
-
           setState(() {
             _isScanning = false;
-            _analysisResult = {
-              'riskScore': riskScore,
-              'riskLevel': riskLevel,
-              'detectedRisks': detectedRisks,
-              'suggestions': suggestions,
-              'piiEntities': piiEntities,
-              'technicalDetails': {
-                'personalDataPoints': piiEntities.length,
-                'sensitiveKeywords':
-                    piiEntities.map((e) => e.label).toSet().toList(),
-                'privacyScore': (100 - riskScore) / 10,
-              }
-            };
+            _analysisResult = _buildAnalysisResult(piiEntities);
           });
         } else {
           // Fallback to demo data
           _setDemoData(type);
         }
       } else if (type == 'image') {
-        // If the image has a caption, run PII detection on the caption text
-        final caption = widget.mediaItem['caption'] ?? '';
-        if (caption.isNotEmpty && _isInitialized) {
-          final piiEntities = await detectPII(caption);
-          final riskScore = _calculateRiskScore(piiEntities);
-          final riskLevel = _getRiskLevel(riskScore);
-          final detectedRisks = _generateDetectedRisks(piiEntities);
-          final suggestions = _generateSuggestions(piiEntities);
+        if (_isInitialized) {
+          // Extract any text baked into the image (IDs, tickets, screenshots,
+          // documents, etc.) with on-device OCR, then combine it with the
+          // user-provided caption and run the same NER pipeline as text posts.
+          final caption = (widget.mediaItem['caption'] ?? '').toString();
+          String ocrText = '';
+          final encryptedPath = widget.mediaItem['encryptedPath'];
+          if (encryptedPath != null) {
+            ocrText = await ImageOcrService.extractTextFromEncryptedImage(
+                encryptedPath);
+          }
 
+          final combined =
+              [caption, ocrText].where((s) => s.trim().isNotEmpty).join('\n');
+
+          final piiEntities = combined.trim().isEmpty
+              ? <PIIEntity>[]
+              : await detectPII(combined);
+
+          // OCR can take a moment; bail out if the user left this screen.
+          if (!mounted) return;
           setState(() {
             _isScanning = false;
-            _analysisResult = {
-              'riskScore': riskScore,
-              'riskLevel': riskLevel,
-              'detectedRisks': detectedRisks,
-              'suggestions': suggestions,
-              'piiEntities': piiEntities,
-              'technicalDetails': {
-                'personalDataPoints': piiEntities.length,
-                'sensitiveKeywords':
-                    piiEntities.map((e) => e.label).toSet().toList(),
-                'privacyScore': (100 - riskScore) / 10,
-              }
-            };
+            _analysisResult = _buildAnalysisResult(piiEntities)
+              ..['extractedText'] = ocrText;
           });
         } else {
           _setDemoData(type);
@@ -140,6 +122,24 @@ class _ScanAnalysisScreenState extends State<ScanAnalysisScreen> {
     } catch (e, stackTrace) {
       _setDemoData(widget.mediaItem['type'] ?? 'text');
     }
+  }
+
+  // Builds the analysis result map from detected PII entities. Shared by the
+  // text and image scan paths so scoring/summary logic stays in one place.
+  Map<String, dynamic> _buildAnalysisResult(List<PIIEntity> piiEntities) {
+    final riskScore = _calculateRiskScore(piiEntities);
+    return {
+      'riskScore': riskScore,
+      'riskLevel': _getRiskLevel(riskScore),
+      'detectedRisks': _generateDetectedRisks(piiEntities),
+      'suggestions': _generateSuggestions(piiEntities),
+      'piiEntities': piiEntities,
+      'technicalDetails': {
+        'personalDataPoints': piiEntities.length,
+        'sensitiveKeywords': piiEntities.map((e) => e.label).toSet().toList(),
+        'privacyScore': (100 - riskScore) / 10,
+      }
+    };
   }
 
   void _setDemoData(String type) {
@@ -579,9 +579,11 @@ class _ScanAnalysisScreenState extends State<ScanAnalysisScreen> {
               ),
               SizedBox(height: 16),
               Text(
-                _isInitialized
-                    ? 'Analyzing privacy risks in your content...'
-                    : 'Initializing privacy detection model...',
+                !_isInitialized
+                    ? 'Initializing privacy detection model...'
+                    : (widget.mediaItem['type'] == 'image'
+                        ? 'Extracting text from image and analyzing privacy risks...'
+                        : 'Analyzing privacy risks in your content...'),
                 style: TextStyle(
                   fontSize: 16,
                   color: slate600,
@@ -743,6 +745,58 @@ class _ScanAnalysisScreenState extends State<ScanAnalysisScreen> {
                               ),
                             );
                           },
+                        ),
+                      ),
+
+                    // Text extracted from the image via on-device OCR.
+                    if (widget.mediaItem['type'] == 'image' &&
+                        _analysisResult != null)
+                      Padding(
+                        padding: EdgeInsets.only(top: 12),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: slate200),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(Icons.text_snippet_outlined,
+                                      size: 16, color: slate600),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Text extracted from image',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: slate700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                (_analysisResult?['extractedText'] ?? '')
+                                        .toString()
+                                        .trim()
+                                        .isEmpty
+                                    ? 'No readable text found in this image.'
+                                    : _analysisResult!['extractedText'],
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: slate600,
+                                  height: 1.4,
+                                ),
+                                maxLines: 6,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                   ],
@@ -1264,7 +1318,10 @@ class DistilBertTokenizer {
     // BertPreTokenizer which keeps punctuation as token boundaries.
     final pattern = RegExp(r"\w+|[^\s\w]");
     final matches = pattern.allMatches(text);
-    return matches.map((m) => m.group(0) ?? '').where((s) => s.isNotEmpty).toList();
+    return matches
+        .map((m) => m.group(0) ?? '')
+        .where((s) => s.isNotEmpty)
+        .toList();
   }
 
   List<String> tokenize(String text) {
@@ -1607,7 +1664,8 @@ List<PIIEntity> _processPredictions(
             // If current text already ends with punctuation (like '@' or '.')
             // don't insert a space before the next token
             if (currentEntity.text.isNotEmpty &&
-                RegExp(r"[^\w\s]").hasMatch(currentEntity.text.substring(currentEntity.text.length - 1))) {
+                RegExp(r"[^\w\s]").hasMatch(currentEntity.text
+                    .substring(currentEntity.text.length - 1))) {
               sep = '';
             }
           }
