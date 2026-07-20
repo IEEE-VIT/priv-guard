@@ -41,10 +41,9 @@
       "special": true
     }
   },
-  "clean_up_tokenization_spaces": false,
+  "clean_up_tokenization_spaces": true,
   "cls_token": "[CLS]",
   "do_lower_case": true,
-  "extra_special_tokens": {},
   "mask_token": "[MASK]",
   "model_max_length": 512,
   "pad_token": "[PAD]",

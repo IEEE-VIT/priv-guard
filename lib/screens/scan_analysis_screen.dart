@@ -15,7 +15,7 @@ bool _isInitialized = false;
 Future<void> initializePIIDetector() async {
   try {
     // Load the model
-    final modelData = await rootBundle.load('assets/pii_model_no_quant.tflite');
+    final modelData = await rootBundle.load('assets/pii_model.tflite');
     _interpreter = Interpreter.fromBuffer(modelData.buffer.asUint8List());
 
     // Load vocabulary
