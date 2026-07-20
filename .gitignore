@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# PII NER model training artifacts (large dataset + intermediate outputs)
+ner model/data/
+ner model/pii_model/
+ner model/_tflite_candidates/
