@@ -1,0 +1,20 @@
+# Pinned stack for training/exporting the PII NER model (pii_ner_colab.ipynb).
+# These versions are interdependent — do NOT bump them individually:
+#   * transformers 5.x dropped every TF* model class, so it must stay on 4.44.x.
+#   * transformers' TF models need the Keras-2 API -> tf-keras + TF_USE_LEGACY_KERAS=1
+#     (TF 2.16+/Colab ship Keras 3, which is incompatible).
+#   * TF 2.17 requires numpy<2 and protobuf<5.
+#   * tokenizers / huggingface_hub ranges are what transformers 4.44 needs.
+#
+# On Colab, install "tensorflow[and-cuda]==2.17.0" instead of plain tensorflow
+# so TF pulls its own matching CUDA/cuDNN wheels and the GPU is detected reliably.
+
+tensorflow==2.17.0
+tf-keras==2.17.0
+transformers==4.44.2
+tokenizers==0.19.1
+huggingface_hub==0.24.6
+safetensors==0.4.5
+numpy==1.26.4
+protobuf==4.25.4
+scikit-learn==1.5.2
