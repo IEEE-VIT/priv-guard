@@ -42,3 +42,15 @@ android {
 flutter {
     source = "../.."
 }
+
+// The tflite_flutter (0.11.0) plugin bundles the native TFLite runtime from
+// org.tensorflow:tensorflow-lite:2.11.0. The current PII model is exported with
+// TF 2.17, which emits a FULLY_CONNECTED op at version 12 that the 2.11.0 runtime
+// cannot register ("Didn't find op for builtin opcode 'FULLY_CONNECTED' version '12'"),
+// so the interpreter fails to load. Force the newer runtime that supports it.
+configurations.all {
+    resolutionStrategy {
+        force "org.tensorflow:tensorflow-lite:2.17.0"
+        force "org.tensorflow:tensorflow-lite-gpu:2.17.0"
+    }
+}
